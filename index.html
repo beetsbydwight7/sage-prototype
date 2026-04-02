@@ -272,7 +272,7 @@ const Welcome = ({ onNext, subtitleIndex = 0, onSubtitleChange }) => {
           transition: "all 0.6s ease-out 0.3s",
         }}>
           <Button onClick={onNext}>Get Started</Button>
-          <ProgressDots active={0} total={5}/>
+          <ProgressDots active={0} total={6}/>
         </div>
       </div>
     </div>
@@ -354,10 +354,171 @@ const ScatteredRecipes = ({ onNext, onBack }) => (
 
     <div style={{ padding: "12px 4px 0" }}>
       <Button onClick={onNext}>That's me — let's fix it</Button>
-      <ProgressDots active={1} total={5}/>
+      <ProgressDots active={1} total={6}/>
     </div>
   </div>
 );
+
+// ============ SOLUTION BRIDGE ============
+const SolutionBridge = ({ onNext, onBack }) => {
+  const [phase, setPhase] = useState(0);
+
+  useEffect(() => {
+    const timers = [
+      setTimeout(() => setPhase(1), 100),
+      setTimeout(() => setPhase(2), 700),
+      setTimeout(() => setPhase(3), 1300),
+      setTimeout(() => setPhase(4), 1900),
+    ];
+    return () => timers.forEach(clearTimeout);
+  }, []);
+
+  const recipes = [
+    { emoji: "🍝", name: "Pasta Night", time: "20 min", scatterX: 10, scatterY: 8, rot: -8 },
+    { emoji: "🌮", name: "Taco Tuesday", time: "25 min", scatterX: 180, scatterY: 0, rot: 5 },
+    { emoji: "🥗", name: "Greek Salad", time: "15 min", scatterX: 30, scatterY: 90, rot: 4 },
+    { emoji: "🍲", name: "Beef Stew", time: "2 hrs", scatterX: 190, scatterY: 80, rot: -5 },
+    { emoji: "🥘", name: "Stir Fry", time: "20 min", scatterX: 80, scatterY: 150, rot: 3 },
+    { emoji: "🍕", name: "Pizza Night", time: "45 min", scatterX: 160, scatterY: 148, rot: -3 },
+  ];
+
+  const days = ["MON", "TUE", "WED", "THU", "FRI"];
+
+  return (
+    <div style={{ height: 852, display: "flex", flexDirection: "column", padding: "54px 28px 20px" }}>
+      {/* Back button */}
+      <button onClick={onBack} style={{
+        width: 36, height: 36, borderRadius: 18, background: C.sageLt, border: "none", cursor: "pointer",
+        display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 4, flexShrink: 0,
+      }}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.sage} strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+
+      {/* Header copy — fades in phase 4 */}
+      <div style={{
+        textAlign: "center", padding: "0 8px", marginBottom: 16,
+        opacity: phase >= 4 ? 1 : 0, transform: phase >= 4 ? "translateY(0)" : "translateY(10px)",
+        transition: "all 0.6s ease-out",
+      }}>
+        <p style={{
+          fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase",
+          color: C.sage, marginBottom: 10,
+        }}>The solution</p>
+        <h2 style={{
+          fontSize: 26, fontWeight: 700, color: C.charcoal, margin: "0 0 8px", lineHeight: 1.2,
+          fontFamily: "Georgia, 'Times New Roman', serif",
+        }}>Sage brings it all together.</h2>
+        <p style={{ fontSize: 15, color: C.warmGray, lineHeight: 1.5, margin: 0 }}>
+          One place for every recipe. Personalized meal plans in seconds.
+        </p>
+      </div>
+
+      {/* Scrollable middle area */}
+      <div style={{ flex: 1, overflowY: "auto", paddingBottom: 120 }}>
+        {/* Vault section label — fades in phase 2 */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: 6, marginBottom: 10,
+          opacity: phase >= 2 ? 1 : 0, transition: "opacity 0.4s ease-out",
+        }}>
+          <span style={{ fontSize: 16 }}>📖</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: C.sage }}>Your Recipe Vault</span>
+        </div>
+
+        {/* Recipe cards — scattered in phase 1, grid in phase 2+ */}
+        <div style={{
+          position: "relative",
+          height: phase >= 2 ? "auto" : 200,
+          display: phase >= 2 ? "grid" : "block",
+          gridTemplateColumns: "repeat(3, 1fr)",
+          gap: 8,
+          marginBottom: 20,
+          transition: "height 0.6s ease-out",
+        }}>
+          {recipes.map((r, i) => (
+            <div key={r.name} style={{
+              ...(phase < 2 ? {
+                position: "absolute",
+                left: r.scatterX,
+                top: r.scatterY,
+                width: 90,
+                transform: `rotate(${r.rot}deg)`,
+              } : {
+                position: "relative",
+                left: 0,
+                top: 0,
+                transform: "rotate(0deg)",
+              }),
+              background: C.white,
+              borderRadius: 10,
+              padding: "10px 6px",
+              textAlign: "center",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+              border: `1px solid ${C.linen}`,
+              transition: "all 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)",
+              opacity: phase >= 1 ? 1 : 0,
+              transitionDelay: `${i * 0.05}s`,
+            }}>
+              <div style={{ fontSize: 24, marginBottom: 4 }}>{r.emoji}</div>
+              <p style={{
+                fontSize: 11, fontWeight: 600, color: C.charcoal, margin: 0,
+                opacity: phase >= 2 ? 1 : 0, transition: "opacity 0.3s ease-out 0.3s",
+              }}>{r.name}</p>
+              <p style={{
+                fontSize: 10, color: C.stone, margin: "2px 0 0",
+                opacity: phase >= 2 ? 1 : 0, transition: "opacity 0.3s ease-out 0.4s",
+              }}>{r.time}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Meal plan section — slides up in phase 3 */}
+        <div style={{
+          opacity: phase >= 3 ? 1 : 0,
+          transform: phase >= 3 ? "translateY(0)" : "translateY(20px)",
+          transition: "all 0.6s ease-out",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+            <span style={{ fontSize: 16 }}>✨</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: C.amber }}>Sage plans your week</span>
+          </div>
+          <div style={{
+            background: `linear-gradient(135deg, #FFF9EE, ${C.cream})`,
+            borderRadius: 14, padding: "12px 10px",
+            border: `1px solid ${C.amber}20`,
+          }}>
+            <div style={{ display: "flex", gap: 6 }}>
+              {days.map((day, i) => (
+                <div key={day} style={{
+                  flex: 1, background: C.white, borderRadius: 10, padding: "8px 4px", textAlign: "center",
+                  opacity: phase >= 3 ? 1 : 0, transform: phase >= 3 ? "translateY(0)" : "translateY(8px)",
+                  transition: `all 0.4s ease-out ${0.1 * i}s`,
+                }}>
+                  <p style={{ fontSize: 9, fontWeight: 700, color: C.amber, margin: "0 0 4px" }}>{day}</p>
+                  <div style={{ fontSize: 20, marginBottom: 2 }}>{recipes[i].emoji}</div>
+                  <p style={{ fontSize: 8, color: C.charcoal, margin: 0, fontWeight: 500 }}>
+                    {recipes[i].name.split(" ")[0]}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom CTA — fades in phase 4 */}
+      <div style={{
+        position: "absolute", bottom: 0, left: 0, right: 0,
+        padding: "16px 28px 20px",
+        background: `linear-gradient(transparent, ${C.warmWhite} 16px)`,
+        opacity: phase >= 4 ? 1 : 0, transform: phase >= 4 ? "translateY(0)" : "translateY(10px)",
+        transition: "all 0.5s ease-out",
+      }}>
+        <Button onClick={onNext}>Let's set it up</Button>
+        <ProgressDots active={2} total={6}/>
+      </div>
+    </div>
+  );
+};
 
 const Preferences = ({ onNext, onBack }) => {
   const [dietary, setDietary] = useState(["Vegetarian", "Dairy-Free"]);
@@ -472,7 +633,7 @@ const Preferences = ({ onNext, onBack }) => {
       <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "16px 28px 20px", background: `linear-gradient(transparent, ${C.warmWhite} 16px)` }}>
         <Button variant="text" onClick={onBack} style={{ marginBottom: 4 }}>Skip for now</Button>
         <Button onClick={onNext}>Next — Pick Your Meals</Button>
-        <ProgressDots active={2} total={5}/>
+        <ProgressDots active={3} total={6}/>
       </div>
     </div>
   );
@@ -606,7 +767,7 @@ const MealPicker = ({ onNext, onBack }) => {
           width: "100%", padding: "10px 0", background: "none", border: "none",
           cursor: "pointer", fontSize: 14, color: C.stone, fontWeight: 500, marginTop: 4,
         }}>Skip — surprise me</button>
-        <ProgressDots active={3} total={5}/>
+        <ProgressDots active={4} total={6}/>
       </div>
     </div>
   );
@@ -647,7 +808,7 @@ const GeneratingPlan = ({ onDone }) => {
           </div>
         ))}
       </div>
-      <div style={{ position: "absolute", bottom: 32 }}><ProgressDots active={4} total={5}/></div>
+      <div style={{ position: "absolute", bottom: 32 }}><ProgressDots active={5} total={6}/></div>
       <style>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }`}</style>
     </div>
   );
@@ -3522,8 +3683,9 @@ function SagePrototype() {
 
       <PhoneFrame>
         {screen === "welcome" && <Welcome onNext={() => setScreen("scattered")} subtitleIndex={subtitleIdx}/>}
-        {screen === "scattered" && <ScatteredRecipes onNext={() => setScreen("preferences")} onBack={() => setScreen("welcome")}/>}
-        {screen === "preferences" && <Preferences onNext={() => setScreen("mealpicker")} onBack={() => setScreen("scattered")}/>}
+        {screen === "scattered" && <ScatteredRecipes onNext={() => setScreen("solution")} onBack={() => setScreen("welcome")}/>}
+        {screen === "solution" && <SolutionBridge onNext={() => setScreen("preferences")} onBack={() => setScreen("scattered")}/>}
+        {screen === "preferences" && <Preferences onNext={() => setScreen("mealpicker")} onBack={() => setScreen("solution")}/>}
         {screen === "mealpicker" && <MealPicker onNext={() => setScreen("generating")} onBack={() => setScreen("preferences")}/>}
         {screen === "generating" && <GeneratingPlan onDone={() => setScreen("plan")}/>}
         {screen === "plan" && <WeeklyPlan onRecipeTap={(meal) => { setSelectedRecipe(meal); setRecipeOrigin("plan"); setScreen("recipe"); }} onNavigate={navigate} onNewPlan={() => setScreen("newplan")} batchDay={planBatchDay} planAssignments={planAssignments}/>}
@@ -3537,7 +3699,7 @@ function SagePrototype() {
       </PhoneFrame>
 
       <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-        {["welcome", "scattered", "preferences", "mealpicker", "plan", "newplan", "vault", "import", "grocery", "profile", "paywall"].map(s => (
+        {["welcome", "scattered", "solution", "preferences", "mealpicker", "plan", "newplan", "vault", "import", "grocery", "profile", "paywall"].map(s => (
           <button key={s} onClick={() => setScreen(s)} style={{
             padding: "6px 14px", borderRadius: 8, border: `1px solid ${screen === s ? C.sage : "rgba(255,255,255,0.1)"}`,
             background: screen === s ? C.sage : "transparent", color: screen === s ? C.white : C.warmGray,
