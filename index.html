@@ -878,9 +878,24 @@ const PlanReady = ({ onViewPlan }) => {
 // ============ APP SCREENS ============
 const MealCard = ({ meal, onTap, onSwap }) => {
   const [swapped, setSwapped] = useState(false);
+  const [removed, setRemoved] = useState(false);
   const swapMeal = swapped
     ? { name: "One-Pot Pasta Primavera", time: "25 min", servings: "4", difficulty: "Easy", tags: ["Quick", "Veggie-Packed"], type: meal.type }
     : meal;
+
+  if (removed) return (
+    <div style={{
+      display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+      padding: "28px 20px", borderRadius: 16, border: `1.5px dashed ${C.linen}`,
+      background: C.white,
+    }}>
+      <p style={{ fontSize: 13, color: C.stone, margin: 0 }}>No {meal.type.toLowerCase()} planned</p>
+      <button onClick={() => setRemoved(false)} style={{
+        padding: "6px 14px", borderRadius: 10, border: `1px solid ${C.sage}`,
+        background: C.sageLt, color: C.sage, fontSize: 12, fontWeight: 600, cursor: "pointer",
+      }}>Add back</button>
+    </div>
+  );
 
   return (
     <div style={{ position: "relative" }}>
@@ -940,19 +955,31 @@ const MealCard = ({ meal, onTap, onSwap }) => {
           </div>
         )}
       </button>
-      {/* Swap button */}
-      <button onClick={(e) => { e.stopPropagation(); setSwapped(!swapped); }} style={{
+      {/* Swap & remove buttons */}
+      <div style={{
         position: "absolute", top: "50%", right: 12, transform: "translateY(-50%)",
-        width: 32, height: 32, borderRadius: 16,
-        background: swapped ? C.sage : C.white, border: `1.5px solid ${swapped ? C.sage : C.linen}`,
-        cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.1)", transition: "all 0.2s ease", zIndex: 2,
+        display: "flex", flexDirection: "column", gap: 6, zIndex: 2,
       }}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={swapped ? C.white : C.warmGray} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M4 7h12m0 0l-4-4m4 4l-4 4"/>
-          <path d="M20 17H8m0 0l4 4m-4-4l4-4"/>
-        </svg>
-      </button>
+        <button onClick={(e) => { e.stopPropagation(); setSwapped(!swapped); }} style={{
+          width: 32, height: 32, borderRadius: 16,
+          background: swapped ? C.sage : C.white, border: `1.5px solid ${swapped ? C.sage : C.linen}`,
+          cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.1)", transition: "all 0.2s ease",
+        }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={swapped ? C.white : C.warmGray} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 7h12m0 0l-4-4m4 4l-4 4"/>
+            <path d="M20 17H8m0 0l4 4m-4-4l4-4"/>
+          </svg>
+        </button>
+        <button onClick={(e) => { e.stopPropagation(); setRemoved(true); }} style={{
+          width: 32, height: 32, borderRadius: 16,
+          background: C.white, border: `1.5px solid ${C.linen}`,
+          cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.1)", transition: "all 0.2s ease",
+        }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.stone} strokeWidth="2" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
     </div>
   );
 };
@@ -1112,6 +1139,30 @@ const WeeklyPlan = ({ onRecipeTap, onNavigate, onNewPlan, batchDay, planAssignme
           ))}
         </div>
 
+        {/* Batch cook day suggestion — shown when no batch day is set */}
+        {batchDay == null && (
+          <button onClick={onNewPlan} style={{
+            display: "flex", alignItems: "center", gap: 12, width: "100%", padding: "14px 16px",
+            borderRadius: 14, border: `1.5px dashed ${C.amber}60`, background: `${C.cream}80`,
+            cursor: "pointer", textAlign: "left", marginTop: 20, transition: "all 0.15s ease",
+          }}>
+            <div style={{
+              width: 40, height: 40, borderRadius: 20, background: C.amber + "20",
+              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+              fontSize: 20,
+            }}>🍳</div>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 14, fontWeight: 600, color: C.charcoal, margin: "0 0 2px" }}>
+                Try a batch cook day
+              </p>
+              <p style={{ fontSize: 12, color: C.warmGray, margin: 0, lineHeight: 1.3 }}>
+                Cook once, eat all week. Sage plans meals that store well and groups your prep.
+              </p>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.stone} strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+        )}
+
         {/* Sage Suggestions section */}
         <div style={{ marginTop: 24, paddingBottom: 20 }}>
           <div style={{
@@ -1151,7 +1202,7 @@ const WeeklyPlan = ({ onRecipeTap, onNavigate, onNewPlan, batchDay, planAssignme
 
 // ============ NEW PLAN BUILDER ============
 const NewPlanBuilder = ({ onDone, onBack, existingAssignments = {} }) => {
-  const [step, setStep] = useState(0); // 0=dates, 1=meals, 2=grid, 3=constraints, 4=vault picks, 5=generating
+  const [step, setStep] = useState(0); // 0=days+meals, 1=customize, 2=generating
   const [selectedDays, setSelectedDays] = useState([0, 1, 2, 3, 4, 5, 6]);
   const [selectedMeals, setSelectedMeals] = useState(["Breakfast", "Lunch", "Dinner"]);
   const [mealGrid, setMealGrid] = useState({}); // key: "dayIndex-meal" → boolean
@@ -1161,6 +1212,7 @@ const NewPlanBuilder = ({ onDone, onBack, existingAssignments = {} }) => {
   const [constraints, setConstraints] = useState([]);
   const defaultHeadcount = 4;
   const [lockedRecipes, setLockedRecipes] = useState([]);
+  const [showGrid, setShowGrid] = useState(false);
   const [dots, setDots] = useState(0);
 
   const days = [
@@ -1229,10 +1281,10 @@ const NewPlanBuilder = ({ onDone, onBack, existingAssignments = {} }) => {
 
   const activeSlots = Object.values(mealGrid).filter(Boolean).length;
   const totalSlots = gridInitialized ? activeSlots : selectedDays.length * selectedMeals.length;
-  const stepLabels = ["Days", "Meals", "Customize", "Preferences", "Lock In"];
+  const stepLabels = ["Plan", "Customize"];
 
   const startGenerate = () => {
-    setStep(5);
+    setStep(2);
     const dotInterval = setInterval(() => setDots(d => (d + 1) % 4), 350);
     setTimeout(() => { clearInterval(dotInterval); onDone(batchDay); }, 3000);
   };
@@ -1252,7 +1304,7 @@ const NewPlanBuilder = ({ onDone, onBack, existingAssignments = {} }) => {
     </div>
   );
 
-  // Step 0: Choose days
+  // Step 0: Plan your week (days + meals combined)
   if (step === 0) return (
     <div style={{ height: 852, position: "relative", display: "flex", flexDirection: "column" }}>
       <div style={{ padding: "54px 24px 0", flex: 1, overflowY: "auto" }}>
@@ -1263,43 +1315,85 @@ const NewPlanBuilder = ({ onDone, onBack, existingAssignments = {} }) => {
           }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.sage} strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
           </button>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: C.charcoal, margin: 0, fontFamily: "ui-serif, \"New York\", Charter, Georgia, serif" }}>New Meal Plan</h1>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: C.charcoal, margin: 0, fontFamily: "Georgia, 'Times New Roman', serif" }}>New Meal Plan</h1>
         </div>
         <StepBar/>
-        <h2 style={{ fontSize: 22, fontWeight: 700, color: C.charcoal, margin: "0 0 6px", fontFamily: "ui-serif, \"New York\", Charter, Georgia, serif" }}>Which days do you need planned?</h2>
-        <p style={{ fontSize: 14, color: C.warmGray, margin: "0 0 14px" }}>Tap to select or deselect days.</p>
+        <h2 style={{ fontSize: 22, fontWeight: 700, color: C.charcoal, margin: "0 0 6px", fontFamily: "Georgia, 'Times New Roman', serif" }}>Plan your week</h2>
+        <p style={{ fontSize: 14, color: C.warmGray, margin: "0 0 16px" }}>Choose which days and meals to plan.</p>
 
-        <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+        {/* Day presets */}
+        <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
           <button onClick={() => setSelectedDays([0,1,2,3,4])} style={{
-            flex: 1, padding: "9px 0", borderRadius: 10, border: `1px solid ${C.linen}`,
-            background: C.white, color: C.sage, fontSize: 12, fontWeight: 600, cursor: "pointer",
-          }}>Weekdays Only</button>
+            flex: 1, padding: "9px 0", borderRadius: 10,
+            border: `1.5px solid ${selectedDays.length === 5 && !selectedDays.includes(5) ? C.sage : C.linen}`,
+            background: selectedDays.length === 5 && !selectedDays.includes(5) ? C.sageLt : C.white,
+            color: C.sage, fontSize: 12, fontWeight: 600, cursor: "pointer",
+          }}>Weekdays</button>
           <button onClick={() => setSelectedDays([0,1,2,3,4,5,6])} style={{
-            flex: 1, padding: "9px 0", borderRadius: 10, border: `1px solid ${C.linen}`,
-            background: C.white, color: C.sage, fontSize: 12, fontWeight: 600, cursor: "pointer",
+            flex: 1, padding: "9px 0", borderRadius: 10,
+            border: `1.5px solid ${selectedDays.length === 7 ? C.sage : C.linen}`,
+            background: selectedDays.length === 7 ? C.sageLt : C.white,
+            color: C.sage, fontSize: 12, fontWeight: 600, cursor: "pointer",
           }}>Full Week</button>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 6, paddingBottom: 8 }}>
+        {/* Day chips — compact row */}
+        <div style={{ display: "flex", gap: 4, marginBottom: 20 }}>
           {days.map((d, i) => (
             <button key={i} onClick={() => toggleDay(i)} style={{
-              display: "flex", alignItems: "center", gap: 14, padding: "12px 14px",
-              background: selectedDays.includes(i) ? C.sageLt + "80" : C.white, borderRadius: 12,
+              flex: 1, padding: "10px 0", borderRadius: 10, textAlign: "center",
+              background: selectedDays.includes(i) ? C.sage : C.white,
               border: `1.5px solid ${selectedDays.includes(i) ? C.sage : C.linen}`,
-              cursor: "pointer", transition: "transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s, background-color 0.2s, border-color 0.2s", width: "100%", textAlign: "left",
+              cursor: "pointer", transition: "all 0.15s ease",
             }}>
-              <div style={{
-                width: 24, height: 24, borderRadius: 12, flexShrink: 0,
-                border: `2px solid ${selectedDays.includes(i) ? C.sage : C.linen}`,
-                background: selectedDays.includes(i) ? C.sage : C.white,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                transition: "transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s, background-color 0.2s, border-color 0.2s",
-              }}>
-                {selectedDays.includes(i) && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>}
-              </div>
-              <span style={{ fontSize: 15, fontWeight: 500, color: C.charcoal }}>{d.full}</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: selectedDays.includes(i) ? C.white : C.charcoal }}>{d.short}</span>
             </button>
           ))}
+        </div>
+
+        {/* Meal types */}
+        <p style={{ fontSize: 13, fontWeight: 600, color: C.warmGray, margin: "0 0 8px", textTransform: "uppercase", letterSpacing: 0.5 }}>Meals</p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
+          {mealTypes.map((m) => {
+            const icons = { Breakfast: "\u2615", Lunch: "\uD83E\uDD57", Dinner: "\uD83C\uDF73", Snack: "\uD83C\uDF4E" };
+            const descs = { Breakfast: "Start the day right", Lunch: "Midday fuel", Dinner: "The main event", Snack: "Between-meal bites" };
+            const sel = selectedMeals.includes(m);
+            return (
+              <button key={m} onClick={() => toggleMeal(m)} style={{
+                display: "flex", alignItems: "center", gap: 12, padding: "12px 14px",
+                background: sel ? C.sageLt + "80" : C.white, borderRadius: 12,
+                border: `1.5px solid ${sel ? C.sage : C.linen}`,
+                cursor: "pointer", transition: "all 0.15s ease", width: "100%", textAlign: "left",
+              }}>
+                <span style={{ fontSize: 22 }}>{icons[m]}</span>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: 15, fontWeight: 600, color: C.charcoal, margin: 0 }}>{m}</p>
+                  <p style={{ fontSize: 11, color: C.warmGray, margin: 0 }}>{descs[m]}</p>
+                </div>
+                <div style={{
+                  width: 24, height: 24, borderRadius: 12,
+                  border: `2px solid ${sel ? C.sage : C.linen}`,
+                  background: sel ? C.sage : C.white,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  transition: "all 0.15s ease",
+                }}>
+                  {sel && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Summary chip */}
+        <div style={{
+          padding: "10px 14px", borderRadius: 12, background: C.cream,
+          display: "flex", alignItems: "center", gap: 8, marginBottom: 16,
+        }}>
+          <span style={{ fontSize: 16 }}>{"\uD83D\uDCCB"}</span>
+          <p style={{ fontSize: 13, color: C.charcoal, margin: 0 }}>
+            <span style={{ fontWeight: 600 }}>{totalSlots} meal slots</span>
+            <span style={{ color: C.warmGray }}> across {selectedDays.length} days</span>
+          </p>
         </div>
       </div>
 
@@ -1308,15 +1402,15 @@ const NewPlanBuilder = ({ onDone, onBack, existingAssignments = {} }) => {
         padding: "12px 24px 28px", background: C.warmWhite,
         borderTop: `1px solid ${C.linen}`,
       }}>
-        <Button onClick={() => setStep(1)}>Next — Choose Meals</Button>
+        <Button onClick={() => { initGrid(); setStep(1); }} disabled={selectedDays.length === 0 || selectedMeals.length === 0}>Next — Customize</Button>
       </div>
     </div>
   );
 
-  // Step 1: Choose meal types
+  // Step 1: Customize (constraints, batch cook, lock recipes, advanced grid)
   if (step === 1) return (
-    <div style={{ height: 852, position: "relative" }}>
-      <div style={{ padding: "54px 24px 0", overflowY: "auto", height: 768 }}>
+    <div style={{ height: 852, position: "relative", display: "flex", flexDirection: "column" }}>
+      <div style={{ padding: "54px 24px 0", flex: 1, overflowY: "auto" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
           <button onClick={() => setStep(0)} style={{
             width: 36, height: 36, borderRadius: 18, background: C.sageLt, border: "none", cursor: "pointer",
@@ -1324,437 +1418,227 @@ const NewPlanBuilder = ({ onDone, onBack, existingAssignments = {} }) => {
           }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.sage} strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
           </button>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: C.charcoal, margin: 0, fontFamily: "ui-serif, \"New York\", Charter, Georgia, serif" }}>New Meal Plan</h1>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: C.charcoal, margin: 0, fontFamily: "Georgia, 'Times New Roman', serif" }}>New Meal Plan</h1>
         </div>
         <StepBar/>
-        <h2 style={{ fontSize: 22, fontWeight: 700, color: C.charcoal, margin: "0 0 6px", fontFamily: "ui-serif, \"New York\", Charter, Georgia, serif" }}>Which meals should we plan?</h2>
-        <p style={{ fontSize: 14, color: C.warmGray, margin: "0 0 20px" }}>Pick the meals you want covered each day.</p>
+        <h2 style={{ fontSize: 22, fontWeight: 700, color: C.charcoal, margin: "0 0 6px", fontFamily: "Georgia, 'Times New Roman', serif" }}>Customize your plan</h2>
+        <p style={{ fontSize: 14, color: C.warmGray, margin: "0 0 16px" }}>All optional — skip straight to generate if you'd like.</p>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {mealTypes.map((m) => {
-            const icons = { Breakfast: "\u2615", Lunch: "\uD83E\uDD57", Dinner: "\uD83C\uDF73", Snack: "\uD83C\uDF4E" };
-            const descs = { Breakfast: "Start the day right", Lunch: "Midday fuel", Dinner: "The main event", Snack: "Between-meal bites" };
-            const sel = selectedMeals.includes(m);
-            return (
-              <button key={m} onClick={() => toggleMeal(m)} style={{
-                display: "flex", alignItems: "center", gap: 14, padding: "16px 16px",
-                background: sel ? C.sageLt + "80" : C.white, borderRadius: 14,
-                border: `1.5px solid ${sel ? C.sage : C.linen}`,
-                cursor: "pointer", transition: "transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s, background-color 0.2s, border-color 0.2s", width: "100%", textAlign: "left",
-              }}>
-                <span style={{ fontSize: 28 }}>{icons[m]}</span>
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: 16, fontWeight: 600, color: C.charcoal, margin: 0 }}>{m}</p>
-                  <p style={{ fontSize: 12, color: C.warmGray, margin: 0 }}>{descs[m]}</p>
-                </div>
-                <div style={{
-                  width: 26, height: 26, borderRadius: 13,
-                  border: `2px solid ${sel ? C.sage : C.linen}`,
-                  background: sel ? C.sage : C.white,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  transition: "transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s, background-color 0.2s, border-color 0.2s",
-                }}>
-                  {sel && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-
-        <div style={{
-          marginTop: 16, padding: "12px 16px", borderRadius: 12, background: C.cream,
-          display: "flex", alignItems: "center", gap: 8,
-        }}>
-          <span style={{ fontSize: 16 }}>{"\uD83D\uDCCB"}</span>
-          <p style={{ fontSize: 13, color: C.charcoal, margin: 0 }}>
-            <span style={{ fontWeight: 600 }}>{totalSlots} meal slots</span>
-            <span style={{ color: C.warmGray }}> across {selectedDays.length} days</span>
-          </p>
-        </div>
-
-        <div style={{ marginTop: 20, paddingBottom: 20 }}>
-          <Button onClick={() => { initGrid(); setStep(2); }}>Next — Customize Your Week</Button>
-        </div>
-      </div>
-    </div>
-  );
-
-  // Step 2: Grid — per-day meal toggling
-  if (step === 2) return (
-    <div style={{ height: 852, position: "relative" }}>
-      <div style={{ padding: "54px 24px 0", overflowY: "auto", height: 768 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-          <button onClick={() => setStep(1)} style={{
-            width: 36, height: 36, borderRadius: 18, background: C.sageLt, border: "none", cursor: "pointer",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.sage} strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
-          </button>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: C.charcoal, margin: 0, fontFamily: "ui-serif, \"New York\", Charter, Georgia, serif" }}>New Meal Plan</h1>
-        </div>
-        <StepBar/>
-        <h2 style={{ fontSize: 22, fontWeight: 700, color: C.charcoal, margin: "0 0 6px", fontFamily: "ui-serif, \"New York\", Charter, Georgia, serif" }}>Fine-tune your week</h2>
-        <p style={{ fontSize: 14, color: C.warmGray, margin: "0 0 6px" }}>Tap a cell to turn it on or off. Tap the number to change how many you're cooking for.</p>
-        <div style={{
-          display: "flex", alignItems: "center", gap: 6, marginBottom: 16,
-          padding: "6px 10px", borderRadius: 8, background: C.sageLt + "60", alignSelf: "flex-start",
-        }}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={C.sage} strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          <span style={{ fontSize: 11, color: C.sage, fontWeight: 600 }}>Number = servings per meal</span>
-        </div>
-
-        {/* Grid */}
-        <div style={{ overflowX: "auto", marginBottom: 16 }}>
-          <div style={{ display: "grid", gridTemplateColumns: `72px repeat(${selectedDays.length}, 1fr)`, gap: 4 }}>
-            {/* Header row — day abbreviations */}
-            <div/>
-            {selectedDays.map(d => (
-              <div key={d} style={{
-                textAlign: "center", padding: "8px 0", fontSize: 11, fontWeight: 700, color: C.sage,
-              }}>{days[d].short}</div>
-            ))}
-
-            {/* Meal rows */}
-            {selectedMeals.map(meal => (
-              <React.Fragment key={meal}>
-                <div style={{
-                  display: "flex", alignItems: "center", padding: "0 2px",
-                  fontSize: 11, fontWeight: 600, color: C.charcoal, height: 52,
-                }}>{meal}</div>
-                {selectedDays.map(d => {
-                  const key = d + "-" + meal;
-                  const on = mealGrid[key];
-                  const count = headcounts[key] || defaultHeadcount;
-                  return (
-                    <div key={key} style={{
-                      height: 52, borderRadius: 10, position: "relative",
-                      background: on ? C.sage : C.linen + "80",
-                      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                      transition: "transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s, background-color 0.2s, border-color 0.2s", cursor: "pointer",
-                    }} onClick={() => toggleGridCell(key)}>
-                      {on ? (
-                        <>
-                          <button onClick={(e) => cycleHeadcount(key, e)} style={{
-                            background: "rgba(255,255,255,0.25)", border: "none", cursor: "pointer",
-                            width: 28, height: 28, borderRadius: 14,
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            fontSize: 15, fontWeight: 700, color: C.white,
-                            transition: "transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s, background-color 0.2s, border-color 0.2s",
-                          }}>{count}</button>
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2" style={{ marginTop: 1 }}><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                        </>
-                      ) : (
-                        <div style={{ width: 6, height: 6, borderRadius: 3, background: C.stone, opacity: 0.3 }}/>
-                      )}
-                    </div>
-                  );
-                })}
-              </React.Fragment>
-            ))}
-          </div>
-        </div>
-
-        {/* Slot count */}
-        <div style={{
-          padding: "12px 16px", borderRadius: 12, background: C.cream,
-          display: "flex", alignItems: "center", gap: 8, marginBottom: 16,
-        }}>
-          <span style={{ fontSize: 16 }}>{"\uD83D\uDCCB"}</span>
-          <p style={{ fontSize: 13, color: C.charcoal, margin: 0 }}>
-            <span style={{ fontWeight: 600 }}>{activeSlots} meals</span>
-            <span style={{ color: C.warmGray }}> to plan across {selectedDays.length} days</span>
-          </p>
-        </div>
-
-        {/* Quick actions */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-          <button onClick={() => {
-            const grid = {};
-            selectedDays.forEach(d => { selectedMeals.forEach(m => { grid[d + "-" + m] = true; }); });
-            setMealGrid(grid);
-          }} style={{
-            flex: 1, padding: "10px 0", borderRadius: 10, border: `1px solid ${C.linen}`,
-            background: C.white, color: C.sage, fontSize: 12, fontWeight: 600, cursor: "pointer",
-          }}>Select All</button>
-          <button onClick={() => {
-            const grid = {};
-            selectedDays.forEach(d => { selectedMeals.forEach(m => { grid[d + "-" + m] = false; }); });
-            setMealGrid(grid);
-          }} style={{
-            flex: 1, padding: "10px 0", borderRadius: 10, border: `1px solid ${C.linen}`,
-            background: C.white, color: C.stone, fontSize: 12, fontWeight: 600, cursor: "pointer",
-          }}>Clear All</button>
-          <button onClick={() => {
-            const grid = { ...mealGrid };
-            selectedDays.forEach(d => {
-              selectedMeals.forEach(m => {
-                grid[d + "-" + m] = m === "Dinner" ? true : (d <= 4 ? true : false);
-              });
-            });
-            setMealGrid(grid);
-          }} style={{
-            flex: 1, padding: "10px 0", borderRadius: 10, border: `1px solid ${C.linen}`,
-            background: C.white, color: C.sage, fontSize: 12, fontWeight: 600, cursor: "pointer",
-          }}>Weekday Focus</button>
-        </div>
-
-        <div style={{ marginTop: 8, paddingBottom: 20 }}>
-          <Button onClick={() => setStep(3)}>Next — Set Preferences</Button>
-        </div>
-      </div>
-    </div>
-  );
-
-  // Step 3: Constraints / preferences
-  if (step === 3) return (
-    <div style={{ height: 852, position: "relative" }}>
-      <div style={{ padding: "54px 24px 0", overflowY: "auto", height: 768 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-          <button onClick={() => setStep(2)} style={{
-            width: 36, height: 36, borderRadius: 18, background: C.sageLt, border: "none", cursor: "pointer",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.sage} strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
-          </button>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: C.charcoal, margin: 0, fontFamily: "ui-serif, \"New York\", Charter, Georgia, serif" }}>New Meal Plan</h1>
-        </div>
-        <StepBar/>
-        <h2 style={{ fontSize: 22, fontWeight: 700, color: C.charcoal, margin: "0 0 6px", fontFamily: "ui-serif, \"New York\", Charter, Georgia, serif" }}>Anything specific this week?</h2>
-        <p style={{ fontSize: 14, color: C.warmGray, margin: "0 0 20px" }}>Optional — select any that apply, or skip ahead.</p>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {/* Constraints */}
+        <p style={{ fontSize: 13, fontWeight: 600, color: C.warmGray, margin: "0 0 8px", textTransform: "uppercase", letterSpacing: 0.5 }}>This week's priorities</p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 20 }}>
           {constraintOptions.map((c) => {
             const sel = constraints.includes(c.label);
             return (
               <button key={c.label} onClick={() => toggleConstraint(c.label)} style={{
-                display: "flex", alignItems: "center", gap: 14, padding: "14px 16px",
-                background: sel ? C.sageLt + "80" : C.white, borderRadius: 12,
+                display: "flex", alignItems: "center", gap: 6, padding: "8px 14px",
+                background: sel ? C.sageLt + "80" : C.white, borderRadius: 20,
                 border: `1.5px solid ${sel ? C.sage : C.linen}`,
-                cursor: "pointer", transition: "transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s, background-color 0.2s, border-color 0.2s", width: "100%", textAlign: "left",
+                cursor: "pointer", transition: "all 0.15s ease",
               }}>
-                <span style={{ fontSize: 22 }}>{c.icon}</span>
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: 14, fontWeight: 600, color: C.charcoal, margin: 0 }}>{c.label}</p>
-                  <p style={{ fontSize: 11, color: C.warmGray, margin: 0 }}>{c.desc}</p>
-                </div>
-                {sel && (
-                  <div style={{
-                    width: 22, height: 22, borderRadius: 11, background: C.sage,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                  }}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>
-                  </div>
-                )}
+                <span style={{ fontSize: 14 }}>{c.icon}</span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: sel ? C.sage : C.charcoal }}>{c.label}</span>
               </button>
             );
           })}
         </div>
 
-        {/* Batch Cook section */}
-        <div style={{ marginTop: 20 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-            <span style={{ fontSize: 20 }}>{"\uD83C\uDF73"}</span>
-            <p style={{ fontSize: 15, fontWeight: 700, color: C.charcoal, margin: 0, fontFamily: "ui-serif, \"New York\", Charter, Georgia, serif" }}>Batch cook day</p>
+        {/* Batch Cook */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+            <span style={{ fontSize: 18 }}>{"\uD83C\uDF73"}</span>
+            <p style={{ fontSize: 14, fontWeight: 700, color: C.charcoal, margin: 0 }}>Batch cook day</p>
           </div>
-          <p style={{ fontSize: 12, color: C.warmGray, margin: "0 0 12px", lineHeight: 1.4 }}>
-            Pick a day to cook in bulk. Sage will design meals that reheat well and last across multiple days.
-          </p>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {[0, 1, 2, 3, 4, 5, 6].map(d => (
               <button key={d} onClick={() => setBatchDay(batchDay === d ? null : d)} style={{
-                padding: "10px 14px", borderRadius: 10,
+                padding: "8px 12px", borderRadius: 10,
                 border: `1.5px solid ${batchDay === d ? C.amber : C.linen}`,
                 background: batchDay === d ? C.cream : C.white,
-                cursor: "pointer", transition: "transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s, background-color 0.2s, border-color 0.2s",
-                display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
+                cursor: "pointer", transition: "all 0.15s ease",
               }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: batchDay === d ? C.amber : C.charcoal }}>{days[d].short}</span>
-                {batchDay === d && (
-                  <span style={{ fontSize: 9, fontWeight: 600, color: C.amber }}>Cook Day</span>
-                )}
+                <span style={{ fontSize: 12, fontWeight: 600, color: batchDay === d ? C.amber : C.charcoal }}>{days[d].short}</span>
               </button>
             ))}
           </div>
           {batchDay !== null && (
-            <div style={{
-              marginTop: 10, padding: "10px 14px", borderRadius: 10,
-              background: C.cream, display: "flex", gap: 10, alignItems: "center",
-            }}>
-              <span style={{ fontSize: 16 }}>{"\uD83D\uDCA1"}</span>
-              <p style={{ fontSize: 11, color: C.charcoal, margin: 0, lineHeight: 1.4 }}>
-                <span style={{ fontWeight: 600 }}>Cook on {days[batchDay].full}</span> — Sage will plan meals that store well, group similar prep, and assign leftovers to the days that follow.
-              </p>
-            </div>
+            <p style={{ fontSize: 11, color: C.warmGray, margin: "6px 0 0", lineHeight: 1.4 }}>
+              Sage will plan meals that store well and group prep for {days[batchDay].full}.
+            </p>
           )}
         </div>
 
-        {/* Sage Free-text Input */}
-        <div style={{ marginTop: 24 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+        {/* Lock in vault recipes */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.charcoal} strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            <p style={{ fontSize: 14, fontWeight: 700, color: C.charcoal, margin: 0 }}>Lock in favorites</p>
+            <span style={{ fontSize: 11, color: C.stone, marginLeft: "auto" }}>Optional</span>
+          </div>
+
+          {/* Show existing vault-assigned recipes */}
+          {Object.keys(existingAssignments).length > 0 && (
             <div style={{
-              width: 28, height: 28, borderRadius: 14, background: C.amber + "20",
-              display: "flex", alignItems: "center", justifyContent: "center",
+              padding: "10px 12px", borderRadius: 10, marginBottom: 8,
+              background: C.sageLt + "40", border: `1px solid ${C.sage}20`,
             }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.amber} strokeWidth="2.5"><path d="M12 2v4m0 12v4m-7.07-3.93l2.83-2.83m8.48-8.48l2.83-2.83M2 12h4m12 0h4"/></svg>
-            </div>
-            <p style={{ fontSize: 15, fontWeight: 700, color: C.charcoal, margin: 0, fontFamily: "ui-serif, \"New York\", Charter, Georgia, serif" }}>Tell Sage anything else</p>
-          </div>
-          <p style={{ fontSize: 12, color: C.warmGray, margin: "0 0 10px", lineHeight: 1.4 }}>
-            Got something specific in mind? Type or speak freely — Sage will factor it in.
-          </p>
-          <div style={{
-            position: "relative", borderRadius: 14, overflow: "hidden",
-            border: `1.5px solid ${C.linen}`, background: C.white,
-          }}>
-            <div style={{
-              minHeight: 80, padding: "12px 48px 12px 14px",
-              fontSize: 14, color: C.stone, lineHeight: 1.5,
-            }}>
-              <span style={{ opacity: 0.6 }}>e.g. "We have leftover rotisserie chicken to use up" or "My daughter's friend is sleeping over Friday — need kid-friendly dinner for 6"</span>
-            </div>
-            {/* Voice input button */}
-            <button style={{
-              position: "absolute", bottom: 10, right: 10,
-              width: 36, height: 36, borderRadius: 18, border: "none", cursor: "pointer",
-              background: `linear-gradient(135deg, ${C.sage} 0%, #3D8B4F 100%)`,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "0 2px 8px rgba(74,124,89,0.3)",
-            }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                <rect x="9" y="1" width="6" height="13" rx="3"/>
-                <path d="M5 10a7 7 0 0014 0"/>
-                <line x1="12" y1="17" x2="12" y2="21"/>
-                <line x1="8" y1="21" x2="16" y2="21"/>
-              </svg>
-            </button>
-          </div>
-          <div style={{
-            display: "flex", alignItems: "center", gap: 4, marginTop: 6,
-          }}>
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={C.stone} strokeWidth="2">
-              <rect x="9" y="1" width="6" height="13" rx="3"/>
-              <path d="M5 10a7 7 0 0014 0"/>
-            </svg>
-            <span style={{ fontSize: 10, color: C.stone }}>Tap the mic to speak instead of typing</span>
-          </div>
-        </div>
-
-        <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 8, paddingBottom: 20 }}>
-          <Button onClick={() => setStep(4)}>Next — Lock In Recipes</Button>
-          <Button variant="text" onClick={() => setStep(4)}>Skip</Button>
-        </div>
-      </div>
-    </div>
-  );
-
-  // Step 4: Lock in vault recipes
-  if (step === 4) return (
-    <div style={{ height: 852, position: "relative" }}>
-      <div style={{ padding: "54px 24px 0", overflowY: "auto", height: 768 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-          <button onClick={() => setStep(3)} style={{
-            width: 36, height: 36, borderRadius: 18, background: C.sageLt, border: "none", cursor: "pointer",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.sage} strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
-          </button>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: C.charcoal, margin: 0, fontFamily: "ui-serif, \"New York\", Charter, Georgia, serif" }}>New Meal Plan</h1>
-        </div>
-        <StepBar/>
-        <h2 style={{ fontSize: 22, fontWeight: 700, color: C.charcoal, margin: "0 0 6px", fontFamily: "ui-serif, \"New York\", Charter, Georgia, serif" }}>Lock in any favorites?</h2>
-        <p style={{ fontSize: 14, color: C.warmGray, margin: "0 0 8px" }}>Pick recipes from your vault that must be in this week's plan. Sage fills the rest.</p>
-
-        {/* Show existing vault-assigned recipes */}
-        {Object.keys(existingAssignments).length > 0 && (
-          <div style={{
-            padding: "12px 14px", borderRadius: 12, marginBottom: 12,
-            background: `linear-gradient(135deg, ${C.sageLt}40 0%, ${C.sageLt}20 100%)`,
-            border: `1px solid ${C.sage}25`,
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.sage} strokeWidth="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-              <p style={{ fontSize: 13, fontWeight: 700, color: C.sage, margin: 0 }}>
+              <p style={{ fontSize: 11, fontWeight: 600, color: C.sage, margin: "0 0 4px" }}>
                 {Object.keys(existingAssignments).length} vault pick{Object.keys(existingAssignments).length > 1 ? "s" : ""} already on your plan
               </p>
-            </div>
-            <p style={{ fontSize: 11, color: C.warmGray, margin: "0 0 8px", lineHeight: 1.4 }}>
-              These recipes you added from your vault will stay locked in place — Sage won't touch them.
-            </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               {Object.entries(existingAssignments).map(([key, name]) => {
                 const [dayIdx, mealType] = key.split("-");
-                const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+                const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
                 return (
-                  <div key={key} style={{
-                    display: "flex", alignItems: "center", gap: 8, padding: "6px 10px",
-                    background: C.white, borderRadius: 8,
-                  }}>
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={C.sage} strokeWidth="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: C.charcoal }}>{name}</span>
-                    <span style={{ fontSize: 10, color: C.stone, marginLeft: "auto" }}>{dayNames[dayIdx]} · {mealType}</span>
-                  </div>
+                  <span key={key} style={{ fontSize: 10, color: C.warmGray }}>{name} ({dayNames[dayIdx]} {mealType}){key !== Object.keys(existingAssignments).at(-1) ? " · " : ""}</span>
                 );
               })}
             </div>
-          </div>
-        )}
+          )}
 
-        {lockedRecipes.length > 0 && (
-          <div style={{
-            padding: "10px 14px", borderRadius: 10, background: C.cream, marginBottom: 16,
-            display: "flex", alignItems: "center", gap: 8,
-          }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.amber} strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-            <p style={{ fontSize: 12, color: C.charcoal, margin: 0 }}>
-              <span style={{ fontWeight: 600 }}>{lockedRecipes.length} locked</span>
-              <span style={{ color: C.warmGray }}> · Sage fills the remaining {totalSlots - lockedRecipes.length} slots</span>
-            </p>
-          </div>
-        )}
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          {vaultRecipes.map((r) => {
-            const sel = lockedRecipes.includes(r.name);
-            return (
-              <button key={r.name} onClick={() => toggleRecipe(r.name)} style={{
-                display: "flex", alignItems: "center", gap: 12, padding: "12px 14px",
-                background: sel ? C.sageLt + "60" : C.white, borderRadius: 12,
-                border: `1.5px solid ${sel ? C.sage : C.linen}`,
-                cursor: "pointer", transition: "transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s, background-color 0.2s, border-color 0.2s", width: "100%", textAlign: "left",
-              }}>
-                <div style={{
-                  width: 42, height: 42, borderRadius: 10, flexShrink: 0,
-                  background: sel ? C.sage : C.linen,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  transition: "transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s, background-color 0.2s, border-color 0.2s",
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            {vaultRecipes.map((r) => {
+              const sel = lockedRecipes.includes(r.name);
+              return (
+                <button key={r.name} onClick={() => toggleRecipe(r.name)} style={{
+                  display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
+                  background: sel ? C.sageLt + "60" : C.white, borderRadius: 10,
+                  border: `1.5px solid ${sel ? C.sage : C.linen}`,
+                  cursor: "pointer", transition: "all 0.15s ease", width: "100%", textAlign: "left",
                 }}>
-                  {sel ? (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-                  ) : (
-                    <span style={{ fontSize: 20 }}>{r.emoji}</span>
-                  )}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: 14, fontWeight: 600, color: C.charcoal, margin: 0 }}>{r.name}</p>
-                  <p style={{ fontSize: 11, color: C.warmGray, margin: 0 }}>{r.time} · From your vault</p>
-                </div>
-                {sel && <span style={{ fontSize: 11, fontWeight: 600, color: C.sage }}>Locked</span>}
-              </button>
-            );
-          })}
+                  <div style={{
+                    width: 36, height: 36, borderRadius: 8, flexShrink: 0,
+                    background: sel ? C.sage : C.linen,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    transition: "all 0.15s ease",
+                  }}>
+                    {sel ? (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                    ) : (
+                      <span style={{ fontSize: 16 }}>{r.emoji}</span>
+                    )}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: C.charcoal, margin: 0 }}>{r.name}</p>
+                    <p style={{ fontSize: 10, color: C.warmGray, margin: 0 }}>{r.time}</p>
+                  </div>
+                  {sel && <span style={{ fontSize: 10, fontWeight: 600, color: C.sage }}>Locked</span>}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 8, paddingBottom: 20 }}>
-          <Button onClick={startGenerate}>
-            Generate My Plan {lockedRecipes.length > 0 ? `(${lockedRecipes.length} locked)` : ""}
-          </Button>
-          <Button variant="text" onClick={startGenerate}>Skip — let Sage pick everything</Button>
+        {/* Advanced: Fine-tune grid toggle */}
+        <button onClick={() => setShowGrid(!showGrid)} style={{
+          display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "12px 14px",
+          background: C.white, borderRadius: 12, border: `1px solid ${C.linen}`,
+          cursor: "pointer", marginBottom: showGrid ? 12 : 20,
+        }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.stone} strokeWidth="2"><path d="M12 3v18M3 12h18"/></svg>
+          <span style={{ fontSize: 13, fontWeight: 600, color: C.charcoal, flex: 1, textAlign: "left" }}>Fine-tune meal grid</span>
+          <span style={{ fontSize: 11, color: C.stone }}>{showGrid ? "Hide" : "Advanced"}</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={C.stone} strokeWidth="2" style={{ transform: showGrid ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s" }}><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+
+        {showGrid && (
+          <div style={{ marginBottom: 20 }}>
+            <p style={{ fontSize: 12, color: C.warmGray, margin: "0 0 8px" }}>Tap cells to toggle. Tap the number to change servings.</p>
+            <div style={{ overflowX: "auto", marginBottom: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: `72px repeat(${selectedDays.length}, 1fr)`, gap: 4 }}>
+                <div/>
+                {selectedDays.map(d => (
+                  <div key={d} style={{ textAlign: "center", padding: "6px 0", fontSize: 10, fontWeight: 700, color: C.sage }}>{days[d].short}</div>
+                ))}
+                {selectedMeals.map(meal => (
+                  <React.Fragment key={meal}>
+                    <div style={{ display: "flex", alignItems: "center", padding: "0 2px", fontSize: 10, fontWeight: 600, color: C.charcoal, height: 44 }}>{meal}</div>
+                    {selectedDays.map(d => {
+                      const key = d + "-" + meal;
+                      const on = mealGrid[key];
+                      const count = headcounts[key] || defaultHeadcount;
+                      return (
+                        <div key={key} style={{
+                          height: 44, borderRadius: 8, background: on ? C.sage : C.linen + "80",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          transition: "all 0.15s ease", cursor: "pointer",
+                        }} onClick={() => toggleGridCell(key)}>
+                          {on ? (
+                            <button onClick={(e) => cycleHeadcount(key, e)} style={{
+                              background: "rgba(255,255,255,0.25)", border: "none", cursor: "pointer",
+                              width: 24, height: 24, borderRadius: 12,
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              fontSize: 13, fontWeight: 700, color: C.white,
+                            }}>{count}</button>
+                          ) : (
+                            <div style={{ width: 5, height: 5, borderRadius: 3, background: C.stone, opacity: 0.3 }}/>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+            <p style={{ fontSize: 11, color: C.warmGray, margin: 0 }}>{activeSlots} of {totalSlots} slots active</p>
+          </div>
+        )}
+
+        {/* Tell Sage anything */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+            <div style={{
+              width: 24, height: 24, borderRadius: 12, background: C.amber + "20",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={C.amber} strokeWidth="2.5"><path d="M12 2v4m0 12v4m-7.07-3.93l2.83-2.83m8.48-8.48l2.83-2.83M2 12h4m12 0h4"/></svg>
+            </div>
+            <p style={{ fontSize: 14, fontWeight: 700, color: C.charcoal, margin: 0 }}>Tell Sage anything</p>
+          </div>
+          <div style={{
+            position: "relative", borderRadius: 12, overflow: "hidden",
+            border: `1.5px solid ${C.linen}`, background: C.white,
+          }}>
+            <div style={{
+              minHeight: 60, padding: "10px 44px 10px 12px",
+              fontSize: 13, color: C.stone, lineHeight: 1.5,
+            }}>
+              <span style={{ opacity: 0.6 }}>e.g. "Use up the leftover chicken" or "Kid-friendly dinner Friday for 6"</span>
+            </div>
+            <button style={{
+              position: "absolute", bottom: 8, right: 8,
+              width: 32, height: 32, borderRadius: 16, border: "none", cursor: "pointer",
+              background: `linear-gradient(135deg, ${C.sage} 0%, #3D8B4F 100%)`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                <rect x="9" y="1" width="6" height="13" rx="3"/>
+                <path d="M5 10a7 7 0 0014 0"/>
+                <line x1="12" y1="17" x2="12" y2="21"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div style={{ paddingBottom: 100 }}/>
+      </div>
+
+      {/* Pinned bottom buttons */}
+      <div style={{
+        position: "absolute", bottom: 0, left: 0, right: 0,
+        padding: "12px 24px 28px",
+        background: `linear-gradient(transparent, ${C.warmWhite} 16px)`,
+      }}>
+        <Button onClick={startGenerate}>
+          Generate My Plan {lockedRecipes.length > 0 ? `(${lockedRecipes.length} locked)` : ""}
+        </Button>
+        <div style={{ marginTop: 6 }}>
+          <Button variant="text" onClick={startGenerate}>Skip all — let Sage decide</Button>
         </div>
       </div>
     </div>
   );
 
-  // Step 5: Generating
+  // Step 2: Generating
   return (
     <div style={{ height: 852, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "0 40px" }}>
       <div style={{ width: 64, height: 64, borderRadius: 32, background: C.sageLt, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 24 }}>
@@ -1813,6 +1697,33 @@ const NewPlanBuilder = ({ onDone, onBack, existingAssignments = {} }) => {
   );
 };
 
+const recipeData = {
+  "Lemon Herb Chicken": {
+    time: "35 min", servings: "4", difficulty: "Medium", source: "Created by Sage",
+    tags: ["High Protein", "Family Fav"], heroColor: `linear-gradient(135deg, #EAF3EB 0%, #C8DFC0 100%)`,
+    ingredients: ["4 chicken breasts", "2 lemons, juiced and zested", "3 cloves garlic, minced", "2 tbsp olive oil", "1 tbsp fresh rosemary", "1 tbsp fresh thyme", "Salt and pepper to taste"],
+    steps: ["Preheat oven to 425°F (220°C).", "In a bowl, combine lemon juice, zest, minced garlic, olive oil, rosemary, and thyme.", "Season chicken breasts with salt and pepper, then coat with the lemon herb mixture.", "Place chicken on a baking sheet lined with parchment paper.", "Bake for 22-25 minutes until internal temperature reaches 165°F.", "Let rest for 5 minutes before serving. Garnish with fresh herbs and lemon slices."],
+  },
+  "Grandma's Tomato Soup": {
+    time: "45 min", servings: "6", difficulty: "Easy", source: "Imported from URL",
+    tags: ["Imported", "Comfort"], heroColor: "linear-gradient(135deg, #F0E8E4 0%, #E8D4C8 100%)",
+    ingredients: ["2 cans (28 oz) whole peeled tomatoes", "1 large onion, diced", "4 cloves garlic, minced", "2 tbsp butter", "1 cup heavy cream", "1 tsp sugar", "Fresh basil leaves", "Salt and pepper to taste", "2 cups vegetable broth", "1 tbsp olive oil"],
+    steps: ["Heat butter and olive oil in a large pot over medium heat.", "Add diced onion and cook until softened, about 5 minutes.", "Add garlic and cook 1 minute more.", "Pour in tomatoes with juices and vegetable broth. Add sugar.", "Simmer for 25 minutes, stirring occasionally.", "Use an immersion blender to puree until smooth.", "Stir in heavy cream and season with salt and pepper.", "Serve topped with fresh basil leaves and crusty bread."],
+  },
+  "Greek Yogurt Parfait": {
+    time: "10 min", servings: "2", difficulty: "Easy", source: "Created by Sage",
+    tags: ["Quick", "Healthy"], heroColor: "linear-gradient(135deg, #FFF3DC 0%, #F0E8D4 100%)",
+    ingredients: ["2 cups Greek yogurt", "1 cup granola", "Mixed berries"],
+    steps: ["Layer yogurt in glasses or bowls.", "Add granola and berries.", "Serve immediately."],
+  },
+  "Mom's Lasagna": {
+    time: "90 min", servings: "8", difficulty: "Medium", source: "Added by photo",
+    tags: ["Family Fav", "Italian"], heroColor: "linear-gradient(135deg, #F0E4E4 0%, #E4D0D0 100%)",
+    ingredients: ["1 lb ground beef", "1 lb Italian sausage", "1 large onion, diced", "4 cloves garlic, minced", "2 cans (28 oz) crushed tomatoes", "2 cans (6 oz) tomato paste", "2 tbsp dried basil", "1 tsp salt", "12 lasagna noodles", "16 oz ricotta cheese", "1 egg", "4 cups mozzarella, shredded", "1 cup Parmesan, grated", "Fresh parsley", "1 tbsp olive oil", "1 tsp dried oregano", "1/2 tsp red pepper flakes", "1 tbsp sugar", "2 cups fresh spinach"],
+    steps: ["Brown beef and sausage in a large pot. Drain fat.", "Add onion and garlic, cook 3 minutes.", "Stir in crushed tomatoes, paste, basil, oregano, salt, sugar, and red pepper flakes. Simmer 30 minutes.", "Cook lasagna noodles per package directions. Drain.", "Mix ricotta, egg, half the Parmesan, and parsley in a bowl.", "Preheat oven to 375°F.", "Layer in 9x13 pan: sauce, noodles, ricotta mixture, spinach, mozzarella. Repeat 3 times.", "Top with remaining sauce, mozzarella, and Parmesan.", "Cover with foil. Bake 25 minutes. Uncover, bake 15 more.", "Let rest 15 minutes before cutting. Garnish with fresh basil."],
+  },
+};
+
 const RecipeDetail = ({ recipe, onBack, onAddToPlan, origin, isFavorite, onToggleFavorite }) => {
   const [checkedIngredients, setCheckedIngredients] = useState([0, 1]);
   const [groceryAdded, setGroceryAdded] = useState(false);
@@ -1821,18 +1732,9 @@ const RecipeDetail = ({ recipe, onBack, onAddToPlan, origin, isFavorite, onToggl
   const [pickedDay, setPickedDay] = useState(null);
   const [pickedMeal, setPickedMeal] = useState(null);
 
-  const ingredients = [
-    "4 chicken breasts", "2 lemons, juiced and zested", "3 cloves garlic, minced",
-    "2 tbsp olive oil", "1 tbsp fresh rosemary", "1 tbsp fresh thyme", "Salt and pepper to taste",
-  ];
-  const steps = [
-    "Preheat oven to 425°F (220°C).",
-    "In a bowl, combine lemon juice, zest, minced garlic, olive oil, rosemary, and thyme.",
-    "Season chicken breasts with salt and pepper, then coat with the lemon herb mixture.",
-    "Place chicken on a baking sheet lined with parchment paper.",
-    "Bake for 22-25 minutes until internal temperature reaches 165°F.",
-    "Let rest for 5 minutes before serving. Garnish with fresh herbs and lemon slices.",
-  ];
+  const data = recipeData[recipe?.name] || recipeData["Lemon Herb Chicken"];
+  const ingredients = data.ingredients;
+  const steps = data.steps;
 
   const pickerDays = [
     { short: "Mon", full: "Monday", num: "29" },
@@ -1872,7 +1774,7 @@ const RecipeDetail = ({ recipe, onBack, onAddToPlan, origin, isFavorite, onToggl
     <div style={{ height: 852, position: "relative", overflowY: "auto" }}>
       {/* Hero image */}
       <div style={{
-        height: 280, background: `linear-gradient(135deg, ${C.sageLt} 0%, #C8DFC0 100%)`,
+        height: 280, background: data.heroColor,
         display: "flex", alignItems: "center", justifyContent: "center", position: "relative",
       }}>
         <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke={C.sage} strokeWidth="1" opacity="0.4"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="4"/><path d="M3 15l4-4 4 4 4-4 4 4"/></svg>
@@ -1890,12 +1792,12 @@ const RecipeDetail = ({ recipe, onBack, onAddToPlan, origin, isFavorite, onToggl
 
       <div style={{ padding: "20px 24px 120px" }}>
         <h1 style={{ fontSize: 26, fontWeight: 700, color: C.charcoal, margin: "0 0 6px", fontFamily: "ui-serif, \"New York\", Charter, Georgia, serif" }}>{recipeName}</h1>
-        <p style={{ fontSize: 14, color: C.warmGray, margin: "0 0 8px" }}>35 min  ·  4 servings  ·  Medium</p>
+        <p style={{ fontSize: 14, color: C.warmGray, margin: "0 0 8px" }}>{data.time}  ·  {data.servings} servings  ·  {data.difficulty}</p>
         <div style={{ display: "flex", gap: 4, margin: "0 0 12px" }}>
           {[1, 2, 3, 4, 5].map(i => <span key={i} style={{ fontSize: 16, color: C.amber }}>★</span>)}
         </div>
         <div style={{ display: "flex", gap: 6, marginBottom: 24 }}>
-          {["High Protein", "Family Favorite", "Gluten-Free"].map((tag, i) => (
+          {(data.tags || ["High Protein", "Family Favorite"]).map((tag, i) => (
             <span key={tag} style={{
               fontSize: 11, fontWeight: 500, padding: "5px 12px", borderRadius: 13,
               background: i % 2 === 0 ? C.sageLt : C.cream, color: i % 2 === 0 ? C.sage : C.amber,
@@ -3746,6 +3648,7 @@ function SagePrototype() {
   const [recipeOrigin, setRecipeOrigin] = useState("plan"); // "plan" | "vault"
   const [subtitleIdx, setSubtitleIdx] = useState(0);
   const [planBatchDay, setPlanBatchDay] = useState(null);
+  const [paywallOrigin, setPaywallOrigin] = useState("profile");
   const [planAssignments, setPlanAssignments] = useState({}); // key: "dayIndex-MealType" → recipe name
   const [favorites, setFavorites] = useState(["Mom's Lasagna", "Banana Pancakes"]); // seeded with a couple for demo
 
@@ -3784,14 +3687,14 @@ function SagePrototype() {
         {screen === "mealpicker" && <MealPicker onNext={() => setScreen("generating")} onBack={() => setScreen("preferences")}/>}
         {screen === "generating" && <GeneratingPlan onDone={() => setScreen("planready")}/>}
         {screen === "planready" && <PlanReady onViewPlan={() => setScreen("plan")}/>}
-        {screen === "plan" && <WeeklyPlan onRecipeTap={(meal) => { setSelectedRecipe(meal); setRecipeOrigin("plan"); setScreen("recipe"); }} onNavigate={navigate} onNewPlan={() => setScreen("newplan")} batchDay={planBatchDay} planAssignments={planAssignments}/>}
+        {screen === "plan" && <WeeklyPlan onRecipeTap={(meal) => { setSelectedRecipe(meal); setRecipeOrigin("plan"); setScreen("recipe"); }} onNavigate={navigate} onNewPlan={() => { setPaywallOrigin("plan"); setScreen("paywall"); }} batchDay={planBatchDay} planAssignments={planAssignments}/>}
         {screen === "newplan" && <NewPlanBuilder onBack={() => setScreen("plan")} onDone={(batchDayVal) => { setPlanBatchDay(batchDayVal ?? null); setScreen("plan"); }} existingAssignments={planAssignments}/>}
         {screen === "vault" && <RecipeVault onNavigate={navigate} onRecipeTap={(meal) => { setSelectedRecipe(meal); setRecipeOrigin("vault"); setScreen("recipe"); }} onImport={() => setScreen("import")} favorites={favorites} onToggleFavorite={toggleFavorite}/>}
         {screen === "import" && <URLImportFlow onBack={() => setScreen("vault")} onNavigate={navigate}/>}
         {screen === "recipe" && <RecipeDetail recipe={selectedRecipe} origin={recipeOrigin} onBack={(dest) => setScreen(dest || recipeOrigin)} onAddToPlan={handleAddToPlan} isFavorite={favorites.includes(selectedRecipe?.name)} onToggleFavorite={toggleFavorite}/>}
         {screen === "grocery" && <GroceryList onNavigate={navigate}/>}
-        {screen === "profile" && <Profile onNavigate={navigate} onUpgrade={() => setScreen("paywall")}/>}
-        {screen === "paywall" && <Paywall onClose={() => setScreen("profile")} onSubscribe={() => setScreen("plan")}/>}
+        {screen === "profile" && <Profile onNavigate={navigate} onUpgrade={() => { setPaywallOrigin("profile"); setScreen("paywall"); }}/>}
+        {screen === "paywall" && <Paywall onClose={() => setScreen(paywallOrigin)} onSubscribe={() => setScreen("plan")}/>}
       </PhoneFrame>
 
       <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
